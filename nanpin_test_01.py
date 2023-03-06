@@ -205,13 +205,14 @@ def calc_orders(
             ##現在価格の取得
             bid = tick_bid[i]
             ask = tick_ask[i]
-            spread = ask - bid
+            #spread = ask - bid
 
             ###entry_flgロジック
-            if spread < spread_limit * point:
-                entry_flg = 1
-            else:
-                entry_flg = 0
+            #if spread < spread_limit * point:
+            #    entry_flg = 1
+            #else:
+            #    entry_flg = 0
+            entry_flg = 1
 
             ##ポジションの含み損益の確認
             if buy_lot == 0:
@@ -267,10 +268,14 @@ def calc_orders(
                 orders_sell_price[i] = current_sell_price
 
             ##追加buyエントリー
+            # 保有ポジションがある
+            # 保有ポジション数が上限未満
+            # スプレッドが許容内 <= 無効
+            # 価格がポジションの平均価格-ナンピン幅を下回った
             if (
                 buy_position > 0 and
                 buy_position < position_limit and
-                entry_flg == 1 and
+                #entry_flg == 1 and
                 ask < current_buy_price - nanpin_range * point
                 ):
 
@@ -290,6 +295,10 @@ def calc_orders(
                 orders_buy_price[i] = current_buy_price
 
             ##追加sellエントリー
+            # 保有ポジションがある
+            # 保有ポジション数が上限未満
+            # スプレッドが許容内 <= 無効
+            # 価格がポジションの平均価格+ナンピン幅を上回った
             if (
                 sell_position > 0 and
                 sell_position < position_limit and
