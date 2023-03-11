@@ -1,5 +1,5 @@
 import pandas as pd
-import mt5
+import MetaTrader5 as mt5
 
 def main():
     print('')
