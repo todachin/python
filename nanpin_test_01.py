@@ -42,15 +42,15 @@ cols = [
        ]
 
 df_orders = pd.DataFrame(index=[], columns=cols)
-first_lot = 0.01 # 初期ロット
+first_lot = 0.1 # 初期ロット
 pip_value = 135 # ピップ値
 point = 0.01 # 価格の最小単位
 spread_limit = 15 # 許容スプレッド
 position_limit = 18 # 最大ポジション数
-martin_factor =1.5 # マーチン倍率
-nanpin_range = 50 # ナンピン幅
-tp_range = 30 # 利確幅
-lc_range = 60 # ロスカット幅
+martin_factor =2.0 # マーチン倍率
+nanpin_range = 3000 # ナンピン幅(円)
+tp_range = 5000 # 利確幅(円)
+lc_range = 10000 # ロスカット幅(円)
 
 def sendLine(text):
 
@@ -218,11 +218,11 @@ def calc_orders(
             if buy_lot == 0:
                 buy_profit = 0
             else:
-                buy_profit = round((bid - buy_price) * buy_lot * pip_value / 0.01, 0)
+                buy_profit = round(ask * buy_position - buy_position_value,0)
             if sell_lot == 0:
                 sell_profit = 0
             else:
-                sell_profit = round(-(ask - sell_price) * sell_lot * pip_value / 0.01, 0)
+                sell_profit = round(-(bid * sell_position) + sell_position_value, 0)
 
             ##ordersに出力
             orders_bid[i] = bid
@@ -240,10 +240,10 @@ def calc_orders(
             ##新規buyエントリー
             if buy_position == 0 and entry_flg == 1:
                 buy_position = 1 # buyポジション数
+                current_buy_price = ask # 最新のbuyポジション価格
                 current_buy_lot = first_lot # 最新のbuyポジションのlot数
                 buy_lot = first_lot # buyポジションのlot数合計
-                current_buy_price = ask # 最新のbuyポジション価格
-                buy_price = ask # buyポジションの平均価格
+                buy_position_value = round(ask * first_lot,0) # buyポジションの価値
 
                 ##ordersに出力
                 orders_type[i] = 1
@@ -255,10 +255,10 @@ def calc_orders(
             ##新規sellエントリー
             if sell_position == 0 and entry_flg == 1:
                 sell_position = 1 # sellポジション数
+                current_sell_price = bid # 最新のsellポジション価格
                 current_sell_lot = first_lot # 最新のsellポジションのlot数
                 sell_lot = first_lot # sellポジションのlot数合計
-                current_sell_price = bid # 最新のsellポジション価格
-                sell_price = bid # sellポジションの平均価格
+                sell_position_value = round(bid * first_lot,0) # sellポジションの価値
 
                 ##ordersに出力
                 orders_type[i] = 2
@@ -270,13 +270,13 @@ def calc_orders(
             ##追加buyエントリー
             # 保有ポジションがある
             # 保有ポジション数が上限未満
-            # スプレッドが許容内 <= 無効
+            # スプレッドが許容内 <- 無効
             # 価格がポジションの平均価格-ナンピン幅を下回った
             if (
                 buy_position > 0 and
                 buy_position < position_limit and
                 #entry_flg == 1 and
-                ask < current_buy_price - nanpin_range * point
+                buy_profit < current_buy_price - nanpin_range * point
                 ):
 
                 buy_position += 1 # buyポジション数
@@ -297,7 +297,7 @@ def calc_orders(
             ##追加sellエントリー
             # 保有ポジションがある
             # 保有ポジション数が上限未満
-            # スプレッドが許容内 <= 無効
+            # スプレッドが許容内 <- 無効
             # 価格がポジションの平均価格+ナンピン幅を上回った
             if (
                 sell_position > 0 and
